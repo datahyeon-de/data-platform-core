@@ -32,4 +32,4 @@
 2. Draft technical specs before coding.
 3. Log the "Tiki-Taka" discussion into `docs/ai-context/` after completing tasks.
 4. 레포지토리 간 의존성을 고려하여 변경 사항을 문서화하십시오.
-
+5. **Git Commit**: 작업 종료 시 `git status` 및 `git diff`를 분석하고, `docs/ai-context/`의 이슈 파일(예: Issue-2-06.md)을 참조하여 메인 번호(`#2`)가 포함된 커밋 메시지를 생성하십시오.

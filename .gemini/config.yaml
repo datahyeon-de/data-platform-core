@@ -1,0 +1,32 @@
+# Gemini Code Assist 동작 설정
+code_review:
+  # 1. 리뷰 중단 여부 (기본값: false)
+  disable: false
+
+  # 2. 리뷰를 남길 최소 심각도 단계 (LOW, MEDIUM, HIGH, CRITICAL)
+  # MEDIUM으로 설정하면 너무 사소한 오타 등은 건너뛰고 중요한 문제 위주로 알려줍니다.
+  comment_severity_threshold: "MEDIUM"
+
+  # 3. 한 PR당 남길 최대 코멘트 수 (-1은 무제한)
+  # 너무 많은 코멘트가 부담스럽다면 10~15 정도로 제한할 수 있습니다.
+  max_review_comments: 15
+
+  # 4. PR이 처음 열렸을 때(Opened)의 동작
+  pull_request_opened:
+    summary: true      # PR 요약을 자동으로 작성할지 여부
+    code_review: true  # PR 생성 시 즉시 코드 리뷰를 시작할지 여부
+    help: false        # 도움말 메시지를 자동으로 올릴지 여부
+    include_drafts: true # 드래프트(Draft) PR도 리뷰 대상에 포함할지 여부
+
+# 5. 리뷰에서 제외할 파일 패턴 (Glob 패턴 사용)
+# 자동 생성된 파일이나 외부 라이브러리 등은 리뷰하지 않도록 설정합니다.
+ignore_patterns:
+  - "node_modules/**"
+  - "dist/**"
+  - "*.test.js"
+  - "ansible/vault.yml" # 민감정보가 담긴 vault 파일 제외 예시
+  - ".github/**"        # 워크플로우 설정 파일 제외
+
+# 6. 재미 요소 추가 (선택 사항)
+# true로 설정하면 PR 요약 시 가끔 시를 써주거나 재치 있는 표현을 사용합니다.
+have_fun: true
