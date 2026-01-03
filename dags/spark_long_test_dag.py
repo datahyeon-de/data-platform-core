@@ -38,13 +38,17 @@ spec:
   mainApplicationFile: "s3a://datalake/scripts/long_running_job.py"
   sparkVersion: "3.5.7"
   serviceAccount: spark-sa
-  hadoopConf:
-    "fs.s3a.endpoint": "http://192.168.0.14:9000"
-    "fs.s3a.path.style.access": "true"
-    "fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
-    "fs.s3a.connection.ssl.enabled": "false"
-    # 인증 공급자를 환경 변수 방식으로 명시
-    "fs.s3a.aws.credentials.provider": "org.apache.hadoop.fs.s3a.auth.EnvironmentVariableCredentialsProvider"
+  sparkConf:
+    "spark.hadoop.fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
+    "spark.hadoop.fs.s3a.endpoint": "http://192.168.0.14:9000"
+    "spark.hadoop.fs.s3a.path.style.access": "true"
+    "spark.hadoop.fs.s3a.aws.credentials.provider": "com.amazonaws.auth.EnvironmentVariableCredentialsProvider"
+    "spark.hadoop.fs.s3a.metadatastore.impl": "org.apache.hadoop.fs.s3a.s3guard.NullMetadataStore"
+    "spark.hadoop.fs.s3a.endpoint.region": "us-east-1"
+    "spark.hadoop.fs.s3a.signing-algorithm": "S3SignerType"
+    "spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version": "2"
+    "spark.eventLog.enabled": "true"
+    "spark.eventLog.dir": "s3a://datalake/logs/spark-log/"
   driver:
     cores: 1
     memory: "512m"
