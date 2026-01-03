@@ -2,6 +2,7 @@ from airflow import DAG
 from airflow.providers.amazon.aws.operators.s3 import S3CreateObjectOperator
 from airflow.providers.cncf.kubernetes.operators.spark_kubernetes import SparkKubernetesOperator
 from airflow.providers.cncf.kubernetes.sensors.spark_kubernetes import SparkKubernetesSensor
+from airflow.models import Connection
 from datetime import datetime
 
 with DAG(
@@ -21,16 +22,18 @@ with DAG(
         aws_conn_id='minio_s3_conn',
         replace=True
     )
+    conn = Connection.get_connection_from_secrets('minio_s3_conn')
+    access_key = conn.login
+    secret_key = conn.password
 
-    # 2. Spark Job 제출
     submit_spark = SparkKubernetesOperator(
         task_id='submit_spark_job',
         namespace='spark',
-        application_file="""
+        application_file=f"""
 apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: SparkApplication
 metadata:
-  name: long-test-{{ ds_nodash }}
+  name: long-test-{{{{ ds_nodash }}}}
 spec:
   type: Python
   mode: cluster
@@ -38,48 +41,30 @@ spec:
   mainApplicationFile: "s3a://datalake/scripts/long_running_job.py"
   sparkVersion: "3.5.7"
   serviceAccount: spark-sa
-
-  # 1. 하둡 설정 (인증 방식을 Simple로 변경하여 확실하게 주입)
   hadoopConf:
     "fs.s3a.endpoint": "http://192.168.0.14:9000"
     "fs.s3a.path.style.access": "true"
     "fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
     "fs.s3a.connection.ssl.enabled": "false"
-    # [수정] 환경변수 대신 SimpleAWSCredentialsProvider를 사용하도록 설정
+    # [핵심] 파일 다운로드 단계부터 인증 정보를 사용할 수 있게 합니다.
     "fs.s3a.aws.credentials.provider": "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider"
-
+    "fs.s3a.access.key": "{access_key}"
+    "fs.s3a.secret.key": "{secret_key}"
   sparkConf:
     "spark.eventLog.enabled": "true"
     "spark.eventLog.dir": "s3a://datalake/logs/spark-log/"
-    "spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version": "2"
-    "spark.hadoop.fs.s3a.endpoint.region": "us-east-1"
-    "spark.hadoop.fs.s3a.signing-algorithm": "S3SignerType"
-    "spark.hadoop.fs.s3a.metadatastore.impl": "org.apache.hadoop.fs.s3a.s3guard.NullMetadataStore"
-
-  # [수정 2] 시크릿을 환경 변수로 주입하는 것이 아니라, Spark 전용 설정을 통해 주입
   driver:
     cores: 1
     memory: "512m"
     serviceAccount: spark-sa
     labels:              
       version: 3.5.7
-    # SparkOperator가 지원하는 시크릿 참조 방식 (가장 확실함)
-    secrets:
-      - name: minio-s3-keys
-        path: /etc/secrets
-        secretType: Generic
-  
-  # 드라이버/실행기에 공통으로 들어가는 환경변수 설정 (하둡이 낚아챌 수 있게 다시 세팅)
   executor:
     cores: 1
     instances: 1
     memory: "512m"
     labels:              
       version: 3.5.7
-    secrets:
-      - name: minio-s3-keys
-        path: /etc/secrets
-        secretType: Generic
 """,
     )
 
