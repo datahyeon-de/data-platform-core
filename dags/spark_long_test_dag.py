@@ -38,16 +38,16 @@ spec:
   mainApplicationFile: "s3a://datalake/scripts/long_running_job.py"
   sparkVersion: "3.5.7"
   serviceAccount: spark-sa
-  
-  # 1. 하둡 공통 설정 (S3 접속용)
+
+  # 1. 하둡 설정 (인증 방식을 Simple로 변경하여 확실하게 주입)
   hadoopConf:
     "fs.s3a.endpoint": "http://192.168.0.14:9000"
     "fs.s3a.path.style.access": "true"
     "fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
     "fs.s3a.connection.ssl.enabled": "false"
-    "fs.s3a.aws.credentials.provider": "com.amazonaws.auth.EnvironmentVariableCredentialsProvider"
+    # [수정] 환경변수 대신 SimpleAWSCredentialsProvider를 사용하도록 설정
+    "fs.s3a.aws.credentials.provider": "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider"
 
-  # 2. 스파크 엔진 설정 (로깅 등)
   sparkConf:
     "spark.eventLog.enabled": "true"
     "spark.eventLog.dir": "s3a://datalake/logs/spark-log/"
@@ -56,43 +56,30 @@ spec:
     "spark.hadoop.fs.s3a.signing-algorithm": "S3SignerType"
     "spark.hadoop.fs.s3a.metadatastore.impl": "org.apache.hadoop.fs.s3a.s3guard.NullMetadataStore"
 
-  # 3. 드라이버 설정 (hadoopConf와 같은 레벨이어야 함!)
+  # [수정 2] 시크릿을 환경 변수로 주입하는 것이 아니라, Spark 전용 설정을 통해 주입
   driver:
     cores: 1
     memory: "512m"
     serviceAccount: spark-sa
     labels:              
       version: 3.5.7
-    env:
-      - name: AWS_ACCESS_KEY_ID
-        valueFrom:
-          secretKeyRef:
-            name: minio-s3-keys
-            key: access-key
-      - name: AWS_SECRET_ACCESS_KEY
-        valueFrom:
-          secretKeyRef:
-            name: minio-s3-keys
-            key: secret-key
-
-  # 4. 실행기 설정 (hadoopConf와 같은 레벨이어야 함!)
+    # SparkOperator가 지원하는 시크릿 참조 방식 (가장 확실함)
+    secrets:
+      - name: minio-s3-keys
+        path: /etc/secrets
+        secretType: Generic
+  
+  # 드라이버/실행기에 공통으로 들어가는 환경변수 설정 (하둡이 낚아챌 수 있게 다시 세팅)
   executor:
     cores: 1
     instances: 1
     memory: "512m"
     labels:              
       version: 3.5.7
-    env:
-      - name: AWS_ACCESS_KEY_ID
-        valueFrom:
-          secretKeyRef:
-            name: minio-s3-keys
-            key: access-key
-      - name: AWS_SECRET_ACCESS_KEY
-        valueFrom:
-          secretKeyRef:
-            name: minio-s3-keys
-            key: secret-key
+    secrets:
+      - name: minio-s3-keys
+        path: /etc/secrets
+        secretType: Generic
 """,
     )
 
