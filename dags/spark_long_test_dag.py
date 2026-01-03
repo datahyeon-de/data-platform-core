@@ -38,7 +38,16 @@ spec:
   mainApplicationFile: "s3a://datalake/scripts/long_running_job.py"
   sparkVersion: "3.5.7"
   serviceAccount: spark-sa
-  # 1. Spark 엔진 설정 (로깅 등 Spark 자체 기능)
+  
+  # 1. 하둡 공통 설정 (S3 접속용)
+  hadoopConf:
+    "fs.s3a.endpoint": "http://192.168.0.14:9000"
+    "fs.s3a.path.style.access": "true"
+    "fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
+    "fs.s3a.connection.ssl.enabled": "false"
+    "fs.s3a.aws.credentials.provider": "com.amazonaws.auth.EnvironmentVariableCredentialsProvider"
+
+  # 2. 스파크 엔진 설정 (로깅 등)
   sparkConf:
     "spark.eventLog.enabled": "true"
     "spark.eventLog.dir": "s3a://datalake/logs/spark-log/"
@@ -46,15 +55,8 @@ spec:
     "spark.hadoop.fs.s3a.endpoint.region": "us-east-1"
     "spark.hadoop.fs.s3a.signing-algorithm": "S3SignerType"
     "spark.hadoop.fs.s3a.metadatastore.impl": "org.apache.hadoop.fs.s3a.s3guard.NullMetadataStore"
-  
-  # 2. 하둡 파일시스템 설정 (S3A 커넥터 초기화용 - 가장 중요)
-  hadoopConf:
-    "fs.s3a.endpoint": "http://192.168.0.14:9000"
-    "fs.s3a.path.style.access": "true"
-    "fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
-    "fs.s3a.connection.ssl.enabled": "false"
-    "fs.s3a.aws.credentials.provider": "com.amazonaws.auth.EnvironmentVariableCredentialsProvider"
-  
+
+  # 3. 드라이버 설정 (hadoopConf와 같은 레벨이어야 함!)
   driver:
     cores: 1
     memory: "512m"
@@ -72,6 +74,8 @@ spec:
           secretKeyRef:
             name: minio-s3-keys
             key: secret-key
+
+  # 4. 실행기 설정 (hadoopConf와 같은 레벨이어야 함!)
   executor:
     cores: 1
     instances: 1
