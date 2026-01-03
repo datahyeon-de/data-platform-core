@@ -43,8 +43,8 @@ spec:
     "fs.s3a.path.style.access": "true"
     "fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
     "fs.s3a.connection.ssl.enabled": "false"
-    # 환경 변수(AWS_ACCESS_KEY_ID 등)를 통해 인증하도록 설정
-    "fs.s3a.aws.credentials.provider": "com.amazonaws.auth.EnvironmentVariableCredentialsProvider"
+    # 인증 공급자를 환경 변수 방식으로 명시
+    "fs.s3a.aws.credentials.provider": "org.apache.hadoop.fs.s3a.auth.EnvironmentVariableCredentialsProvider"
   driver:
     cores: 1
     memory: "512m"
@@ -52,6 +52,7 @@ spec:
     labels:              
       version: 3.5.7
     env:
+      # S3A 커넥터는 아래 환경 변수 이름을 기본으로 읽습니다.
       - name: AWS_ACCESS_KEY_ID
         valueFrom:
           secretKeyRef:
