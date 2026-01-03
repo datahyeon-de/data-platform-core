@@ -38,20 +38,47 @@ spec:
   mainApplicationFile: "s3a://datalake/scripts/long_running_job.py"
   sparkVersion: "3.5.7"
   serviceAccount: spark-sa
-  nodeSelector:
-    workload-type: spark-executor
+  hadoopConf:
+    "fs.s3a.endpoint": "http://192.168.0.14:9000"
+    "fs.s3a.path.style.access": "true"
+    "fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
+    "fs.s3a.connection.ssl.enabled": "false"
+    # 환경 변수(AWS_ACCESS_KEY_ID 등)를 통해 인증하도록 설정
+    "fs.s3a.aws.credentials.provider": "com.amazonaws.auth.EnvironmentVariableCredentialsProvider"
   driver:
     cores: 1
     memory: "512m"
     serviceAccount: spark-sa
     labels:              
       version: 3.5.7
+    env:
+      - name: AWS_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: minio-s3-keys
+            key: access-key
+      - name: AWS_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: minio-s3-keys
+            key: secret-key
   executor:
     cores: 1
     instances: 1
     memory: "512m"
     labels:              
       version: 3.5.7
+    env:
+      - name: AWS_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: minio-s3-keys
+            key: access-key
+      - name: AWS_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: minio-s3-keys
+            key: secret-key
 """,
     )
 
