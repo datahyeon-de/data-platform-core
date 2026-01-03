@@ -24,7 +24,7 @@ with DAG(
     access_key = conn.login
     secret_key = conn.password
 
-    JOB_NAME = "long-test-{{ ts_nodash }}"
+    JOB_NAME = "long-test-{{ ts_nodash | lower }}"
 
     submit_spark = SparkKubernetesOperator(
         task_id='submit_spark_job',
@@ -42,13 +42,15 @@ spec:
   mainApplicationFile: "s3a://datalake/scripts/long_running_job.py"
   sparkVersion: "3.5.7"
   
-  ingress:
-    ingressClassName: nginx
-    host: "spark-ui.local"
-    path: "/{JOB_NAME}"
+  sparkUIOptions:
     servicePort: 4040
-    annotations:
-      nginx.ingress.kubernetes.io/rewrite-target: /
+    ingress:
+      ingressClassName: nginx
+      # host 설정이 필드에 있다면 넣고, 없다면 아래 Root Ingress에서 처리됩니다.
+      host: "spark-ui.local" 
+      path: "/{JOB_NAME}"
+      annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: /
 
   hadoopConf:
     "fs.s3a.endpoint": "http://192.168.0.14:9000"
