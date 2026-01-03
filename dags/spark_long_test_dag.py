@@ -38,17 +38,23 @@ spec:
   mainApplicationFile: "s3a://datalake/scripts/long_running_job.py"
   sparkVersion: "3.5.7"
   serviceAccount: spark-sa
+  # 1. Spark 엔진 설정 (로깅 등 Spark 자체 기능)
   sparkConf:
-    "spark.hadoop.fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
-    "spark.hadoop.fs.s3a.endpoint": "http://192.168.0.14:9000"
-    "spark.hadoop.fs.s3a.path.style.access": "true"
-    "spark.hadoop.fs.s3a.aws.credentials.provider": "com.amazonaws.auth.EnvironmentVariableCredentialsProvider"
-    "spark.hadoop.fs.s3a.metadatastore.impl": "org.apache.hadoop.fs.s3a.s3guard.NullMetadataStore"
-    "spark.hadoop.fs.s3a.endpoint.region": "us-east-1"
-    "spark.hadoop.fs.s3a.signing-algorithm": "S3SignerType"
-    "spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version": "2"
     "spark.eventLog.enabled": "true"
     "spark.eventLog.dir": "s3a://datalake/logs/spark-log/"
+    "spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version": "2"
+    "spark.hadoop.fs.s3a.endpoint.region": "us-east-1"
+    "spark.hadoop.fs.s3a.signing-algorithm": "S3SignerType"
+    "spark.hadoop.fs.s3a.metadatastore.impl": "org.apache.hadoop.fs.s3a.s3guard.NullMetadataStore"
+  
+  # 2. 하둡 파일시스템 설정 (S3A 커넥터 초기화용 - 가장 중요)
+  hadoopConf:
+    "fs.s3a.endpoint": "http://192.168.0.14:9000"
+    "fs.s3a.path.style.access": "true"
+    "fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
+    "fs.s3a.connection.ssl.enabled": "false"
+    "fs.s3a.aws.credentials.provider": "com.amazonaws.auth.EnvironmentVariableCredentialsProvider"
+  
   driver:
     cores: 1
     memory: "512m"
@@ -56,7 +62,6 @@ spec:
     labels:              
       version: 3.5.7
     env:
-      # S3A 커넥터는 아래 환경 변수 이름을 기본으로 읽습니다.
       - name: AWS_ACCESS_KEY_ID
         valueFrom:
           secretKeyRef:
