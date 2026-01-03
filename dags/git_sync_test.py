@@ -14,7 +14,7 @@ with DAG(
     print_structure = BashOperator(
         task_id='print_repo_structure',
         # git-sync는 보통 /opt/airflow/dags/repo 아래에 전체 레포를 가져옵니다.
-        bash_command='ls -R /opt/airflow/dags/repo'
+        bash_command='ls -al /opt/airflow/dags/repo || ls -al /opt/airflow/dags'
     )
 
     # 현재 작업 디렉토리 확인
