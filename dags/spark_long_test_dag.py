@@ -25,7 +25,7 @@ with DAG(
     # 2. Spark Job 제출
     submit_spark = SparkKubernetesOperator(
         task_id='submit_spark_job',
-        namespace='spark', # 우리가 만든 spark 네임스페이스
+        namespace='spark',
         application_file="""
 apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: SparkApplication
@@ -44,10 +44,14 @@ spec:
     cores: 1
     memory: "512m"
     serviceAccount: spark-sa
+    labels:              
+      version: 3.5.7
   executor:
     cores: 1
     instances: 1
     memory: "512m"
+    labels:              
+      version: 3.5.7
 """,
     )
 
