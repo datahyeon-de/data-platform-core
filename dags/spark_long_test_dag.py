@@ -41,18 +41,26 @@ spec:
   mainApplicationFile: "s3a://datalake/scripts/long_running_job.py"
   sparkVersion: "3.5.7"
   serviceAccount: spark-sa
+  
+  # [해결책] 모든 S3A 설정을 hadoopConf로 통합하여 초기 다운로드 단계를 통과시킵니다.
   hadoopConf:
     "fs.s3a.endpoint": "http://192.168.0.14:9000"
     "fs.s3a.path.style.access": "true"
     "fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
     "fs.s3a.connection.ssl.enabled": "false"
-    # [핵심] 파일 다운로드 단계부터 인증 정보를 사용할 수 있게 합니다.
     "fs.s3a.aws.credentials.provider": "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider"
     "fs.s3a.access.key": "{access_key}"
     "fs.s3a.secret.key": "{secret_key}"
+    # 아래 설정들을 sparkConf에서 이리로 옮겼습니다.
+    "fs.s3a.endpoint.region": "us-east-1"
+    "fs.s3a.signing-algorithm": "S3SignerType"
+    "fs.s3a.change.detection.mode": "none" # 400 에러 방지를 위한 추가 옵션
+
   sparkConf:
     "spark.eventLog.enabled": "true"
     "spark.eventLog.dir": "s3a://datalake/logs/spark-log/"
+    "spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version": "2"
+
   driver:
     cores: 1
     memory: "512m"
