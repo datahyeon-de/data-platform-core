@@ -12,12 +12,10 @@ with DAG(
     catchup=False
 ) as dag:
 
-    # 1. 스크립트를 MinIO로 업로드 (git-sync로 가져온 파일을 복사)
     upload_script = S3CreateObjectOperator(
         task_id='upload_pyspark_script',
         s3_bucket='datalake',
-        s3_key='scripts/long_running_job.py',
-        # git-sync 경로 주의: subPath 설정에 따라 달라질 수 있음
+        s3_key='scripts/long_running_job.py',        
         data=open('/opt/airflow/dags/repo/scripts/long_running_job.py', 'rb').read(),
         aws_conn_id='minio_s3_conn',
         replace=True
@@ -26,6 +24,8 @@ with DAG(
     access_key = conn.login
     secret_key = conn.password
 
+    JOB_NAME = "long-test-{{ ts_nodash }}"
+
     submit_spark = SparkKubernetesOperator(
         task_id='submit_spark_job',
         namespace='spark',
@@ -33,16 +33,23 @@ with DAG(
 apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: SparkApplication
 metadata:
-  name: long-test-{{{{ ds_nodash }}}}
+  name: {JOB_NAME}
+  namespace: spark
 spec:
   type: Python
   mode: cluster
   image: "hyeondata/spark-py-aws:3.5.7-v1"
   mainApplicationFile: "s3a://datalake/scripts/long_running_job.py"
   sparkVersion: "3.5.7"
-  serviceAccount: spark-sa
   
-  # [해결책] 모든 S3A 설정을 hadoopConf로 통합하여 초기 다운로드 단계를 통과시킵니다.
+  ingress:
+    ingressClassName: nginx
+    host: "spark-ui.local"
+    path: "/{JOB_NAME}"
+    servicePort: 4040
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: /
+
   hadoopConf:
     "fs.s3a.endpoint": "http://192.168.0.14:9000"
     "fs.s3a.path.style.access": "true"
@@ -51,12 +58,13 @@ spec:
     "fs.s3a.aws.credentials.provider": "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider"
     "fs.s3a.access.key": "{access_key}"
     "fs.s3a.secret.key": "{secret_key}"
-    # 아래 설정들을 sparkConf에서 이리로 옮겼습니다.
     "fs.s3a.endpoint.region": "us-east-1"
     "fs.s3a.signing-algorithm": "S3SignerType"
-    "fs.s3a.change.detection.mode": "none" # 400 에러 방지를 위한 추가 옵션
+    "fs.s3a.change.detection.mode": "none"
 
   sparkConf:
+    # 인그레스 경로와 일치시켜서 UI가 깨지지 않게 함
+    "spark.ui.proxyBase": "/{JOB_NAME}"
     "spark.eventLog.enabled": "true"
     "spark.eventLog.dir": "s3a://datalake/logs/spark-log/"
     "spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version": "2"
