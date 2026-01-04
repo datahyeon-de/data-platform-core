@@ -46,6 +46,7 @@ spec:
     servicePort: 4040
     ingress:
       ingressClassName: nginx
+      host: "spark-ui.local"
       path: "/{JOB_NAME}"
       annotations:
         nginx.ingress.kubernetes.io/rewrite-target: /
