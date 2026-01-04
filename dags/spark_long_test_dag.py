@@ -44,12 +44,10 @@ spec:
   
   sparkUIOptions:
     servicePort: 4040
-    ingress:
-      ingressClassName: nginx
-      host: "spark-ui.local"
-      path: "/{JOB_NAME}"
-      annotations:
-        nginx.ingress.kubernetes.io/rewrite-target: /
+    # 이 버전은 ingress: 블록 대신 아래 필드들을 직접 사용합니다.
+    ingressAnnotations:
+      kubernetes.io/ingress.class: "nginx"
+      nginx.ingress.kubernetes.io/rewrite-target: /
 
   hadoopConf:
     "fs.s3a.endpoint": "http://192.168.0.14:9000"
