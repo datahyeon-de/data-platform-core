@@ -48,8 +48,7 @@ spec:
     ingressAnnotations:
       kubernetes.io/ingress.class: "nginx"
       nginx.ingress.kubernetes.io/rewrite-target: /
-      nginx.ingress.kubernetes.io/proxy-redirect-from: "http://spark-ui.local/"
-      nginx.ingress.kubernetes.io/proxy-redirect-to: "http://spark-ui.local:8080/"
+      nginx.ingress.kubernetes.io/x-forwarded-prefix: "/{JOB_NAME}"
 
   hadoopConf:
     "fs.s3a.endpoint": "http://192.168.0.14:9000"
