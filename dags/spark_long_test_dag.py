@@ -47,8 +47,7 @@ spec:
     # 이 버전은 ingress: 블록 대신 아래 필드들을 직접 사용합니다.
     ingressAnnotations:
       kubernetes.io/ingress.class: "nginx"
-      nginx.ingress.kubernetes.io/rewrite-target: /
-      nginx.ingress.kubernetes.io/x-forwarded-prefix: "/"
+      nginx.ingress.kubernetes.io/ssl-redirect: "false"
 
   hadoopConf:
     "fs.s3a.endpoint": "http://192.168.0.14:9000"
@@ -64,7 +63,7 @@ spec:
 
   sparkConf:
     # 인그레스 경로와 일치시켜서 UI가 깨지지 않게 함
-    "spark.ui.proxyBase": "/"
+    "spark.ui.proxyBase": ""
     "spark.eventLog.enabled": "true"
     "spark.eventLog.dir": "s3a://datalake/logs/spark-log/"
     "spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version": "2"
