@@ -5,32 +5,8 @@ from airflow.providers.cncf.kubernetes.sensors.spark_kubernetes import SparkKube
 from airflow.models import Connection
 from datetime import datetime
 
-with DAG(
-    dag_id='spark_long_running_test',
-    start_date=datetime(2025, 1, 1),
-    schedule_interval=None,
-    catchup=False
-) as dag:
-
-    upload_script = S3CreateObjectOperator(
-        task_id='upload_pyspark_script',
-        s3_bucket='datalake',
-        s3_key='scripts/long_running_job.py',        
-        data=open('/opt/airflow/dags/repo/scripts/long_running_job.py', 'rb').read(),
-        aws_conn_id='minio_s3_conn',
-        replace=True
-    )
-    conn = Connection.get_connection_from_secrets('minio_s3_conn')
-    access_key = conn.login
-    secret_key = conn.password
-
-    JOB_NAME = "long-test-{{ ts_nodash | lower }}"
-
-    submit_spark = SparkKubernetesOperator(
-        task_id='submit_spark_job',
-        namespace='spark',
-        random_name_suffix=False,
-        application_file=f"""
+def generate_spark_application_file(JOB_NAME, access_key, secret_key):
+  return f"""
 apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: SparkApplication
 metadata:
@@ -77,7 +53,35 @@ spec:
     memory: "512m"
     labels:              
       version: 3.5.7
-""",
+"""
+
+
+with DAG(
+    dag_id='spark_long_running_test',
+    start_date=datetime(2025, 1, 1),
+    schedule_interval=None,
+    catchup=False
+) as dag:
+
+    upload_script = S3CreateObjectOperator(
+        task_id='upload_pyspark_script',
+        s3_bucket='datalake',
+        s3_key='scripts/long_running_job.py',        
+        data=open('/opt/airflow/dags/repo/scripts/long_running_job.py', 'rb').read(),
+        aws_conn_id='minio_s3_conn',
+        replace=True
+    )
+    conn = Connection.get_connection_from_secrets('minio_s3_conn')
+    access_key = conn.login
+    secret_key = conn.password
+
+    JOB_NAME = "long-test-{{ ts_nodash | lower }}"
+
+    submit_spark = SparkKubernetesOperator(
+        task_id='submit_spark_job',
+        namespace='spark',
+        random_name_suffix=False,
+        application_file=generate_spark_application_file(JOB_NAME, access_key, secret_key),
     )
 
     upload_script >> submit_spark
