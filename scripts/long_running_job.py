@@ -13,5 +13,7 @@ for i in range(1, 7):  # 6번 반복 (대충 3분 정도)
     df.groupBy("status").count().show()  # shuffle + action => stage 확실히 생김
     time.sleep(30)  # 30초 쉬면서 UI 관찰
 
+time.sleep(600)
+
 print("Spark Job 완료!")
 spark.stop()
